@@ -1,11 +1,22 @@
-.admin-btn {
-  margin-top: 10px;
-  width: 100%;
-  padding: 10px;
-  background: #ff6b6b;
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+button {
+  padding: 12px 24px;
   border: none;
+  background-color: #f6851b; // MetaMask color
   color: white;
   font-weight: bold;
   border-radius: 8px;
   cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
 }

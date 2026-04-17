@@ -1,1 +1,10 @@
-<p>profile works!</p>
+<div class="profile">
+  <h2>User Profile</h2>
+
+  <p><strong>Wallet:</strong> {{ user?.wallet }}</p>
+
+  <p><strong>Signature:</strong></p>
+  <textarea readonly>{{ user?.signature }}</textarea>
+
+  <button (click)="logout()">Logout</button>
+</div>

@@ -1,26 +1,19 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+
 import { AuthService } from '../../services/auth';
 
 @Component({
-  selector: 'app-profile',
-  standalone: true,
-  templateUrl: './profile.html',
-  styleUrls: ['./profile.scss'],
+  selector: 'app-navbar',
+  imports: [],
+  templateUrl: './navbar.html',
+  styleUrl: './navbar.scss',
 })
-export class Profile {
-  user: any;
-
+export class Navbar {
   constructor(
     private router: Router,
     private authService: AuthService,
   ) {}
-
-  ngOnInit() {
-    this.authService.user$.subscribe((user) => {
-      this.user = user;
-    });
-  }
   logout() {
     this.authService.logout();
     this.router.navigateByUrl('/', { replaceUrl: true });
