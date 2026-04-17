@@ -27,4 +27,15 @@ export class Login {
       this.router.navigate(['/admin']);
     }, 0);
   }
+  ngOnInit() {
+    const user = this.authService.getUser();
+
+    if (user) {
+      if (user.role === 'admin') {
+        this.router.navigate(['/admin']);
+      } else {
+        this.router.navigate(['/profile']);
+      }
+    }
+  }
 }
