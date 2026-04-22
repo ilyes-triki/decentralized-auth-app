@@ -1,28 +1,26 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   templateUrl: './profile.html',
-  styleUrls: ['./profile.scss'],
 })
-export class Profile {
+export class Profile implements OnInit {
   user: any;
 
   constructor(
+    private auth: AuthService,
     private router: Router,
-    private authService: AuthService,
   ) {}
 
   ngOnInit() {
-    this.authService.user$.subscribe((user) => {
-      this.user = user;
-    });
+    this.user = this.auth.getUser();
   }
+
   logout() {
-    this.authService.logout();
-    this.router.navigateByUrl('/', { replaceUrl: true });
+    this.auth.logout();
+    this.router.navigate(['/']);
   }
 }

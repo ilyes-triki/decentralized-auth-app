@@ -1,19 +1,13 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
-export const loginGuard: CanActivateFn = () => {
-  const authService = inject(AuthService);
+export const loginGuard = () => {
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  const user = authService.getUser();
-
-  if (user) {
-    if (user.role === 'admin') {
-      router.navigate(['/admin']);
-    } else {
-      router.navigate(['/profile']);
-    }
+  if (auth.getUser()) {
+    router.navigate(['/profile']);
     return false;
   }
 

@@ -1,21 +1,34 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-
 import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-navbar',
-  imports: [],
-  templateUrl: './navbar.html',
-  styleUrl: './navbar.scss',
+  standalone: true,
+  template: `
+    @if (auth.isLoggedIn()) {
+      <nav>
+        <button (click)="goProfile()">Profile</button>
+        <button (click)="goAdmin()">Admin</button>
+        <button (click)="logout()">Logout</button>
+      </nav>
+    }
+  `,
 })
 export class Navbar {
   constructor(
+    public auth: AuthService,
     private router: Router,
-    private authService: AuthService,
   ) {}
+
+  goProfile() {
+    this.router.navigate(['/profile']);
+  }
+  goAdmin() {
+    this.router.navigate(['/admin']);
+  }
   logout() {
-    this.authService.logout();
-    this.router.navigateByUrl('/', { replaceUrl: true });
+    this.auth.logout();
+    this.router.navigate(['/']);
   }
 }
