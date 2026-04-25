@@ -1,29 +1,52 @@
 import { Injectable } from '@angular/core';
-import { ethers } from 'ethers';
 
 declare let window: any;
 
 @Injectable({ providedIn: 'root' })
 export class Web3Service {
-  async connectAndSign(): Promise<{ address: string; signature: string } | null> {
+  async connectWalletOnly() {
+    const accounts = await window.ethereum.request({
+      method: 'eth_requestAccounts',
+    });
+
+    return accounts;
+  }
+
+  async signMessage(address: string, message: string) {
+    return await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, address],
+    });
+  }
+
+  async connectAndSign() {
     try {
-      if (typeof window === 'undefined' || !window.ethereum) {
-        alert('MetaMask is not installed');
+      if (!window.ethereum) {
+        alert('MetaMask not detected');
         return null;
       }
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send('eth_requestAccounts', []);
+      await window.ethereum.request({
+        method: 'wallet_requestPermissions',
+        params: [{ eth_accounts: {} }],
+      });
 
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      });
 
-      const message = 'Login to decentralized authentication system';
-      const signature = await signer.signMessage(message);
+      const address = accounts[0];
 
-      return { address, signature };
-    } catch (e) {
-      console.error(e);
+      const message = 'Login to my app';
+
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, address],
+      });
+
+      return { address, signature, message };
+    } catch (error: any) {
+      console.error(error);
       return null;
     }
   }

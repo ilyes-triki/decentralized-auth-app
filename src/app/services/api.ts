@@ -10,4 +10,29 @@ export class ApiService {
     const res = await fetch(`${this.baseUrl}/test`);
     return res.text();
   }
+
+  async getNonce(address: string) {
+    const res = await fetch(`${this.baseUrl}/nonce?address=${address}`);
+    return res.text();
+  }
+
+  async login(address: string, signature: string, message: string) {
+    const res = await fetch(`${this.baseUrl}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        address,
+        signature,
+        message,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Login failed');
+    }
+
+    return res.json();
+  }
 }
