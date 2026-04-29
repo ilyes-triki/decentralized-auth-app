@@ -6,11 +6,6 @@ import { Injectable } from '@angular/core';
 export class ApiService {
   baseUrl = 'http://localhost:8080/api/auth';
 
-  async testBackend() {
-    const res = await fetch(`${this.baseUrl}/test`);
-    return res.text();
-  }
-
   async getNonce(address: string) {
     const res = await fetch(`${this.baseUrl}/nonce?address=${address}`);
     return res.text();

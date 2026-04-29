@@ -1,7 +1,6 @@
 <h2>Profile</h2>
 
-<p>Wallet: {{ user?.wallet }}</p>
-
-<textarea readonly>{{ user?.signature }}</textarea>
+<p><strong>Address:</strong> {{ user?.address }}</p>
+<p><strong>Role:</strong> {{ user?.role }}</p>
 
 <button (click)="logout()">Logout</button>

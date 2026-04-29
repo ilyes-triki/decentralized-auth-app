@@ -8,7 +8,12 @@ export const roleGuard = () => {
 
   const user = auth.getUser();
 
-  if (!user || user.role !== 'admin') {
+  if (!user) {
+    router.navigate(['/']);
+    return false;
+  }
+
+  if (user.role !== 'admin') {
     router.navigate(['/profile']);
     return false;
   }

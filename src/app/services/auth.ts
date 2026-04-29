@@ -21,8 +21,8 @@ export class AuthService {
     user ? localStorage.setItem('user', JSON.stringify(user)) : localStorage.removeItem('user');
   }
 
-  loginWithWallet(wallet: string, signature: string) {
-    const user = { wallet, role: 'user', signature };
+  loginWithWallet(address: string, role: string) {
+    const user = { address, role };
     this.setStoredUser(user);
     this.userSubject.next(user);
   }
@@ -33,6 +33,10 @@ export class AuthService {
 
   isLoggedIn() {
     return !!this.userSubject.value;
+  }
+
+  isAdmin(): boolean {
+    return this.getUser()?.role === 'admin';
   }
 
   logout() {

@@ -10,5 +10,6 @@ export const authGuard = () => {
     router.navigate(['/']);
     return false;
   }
+
   return true;
 };

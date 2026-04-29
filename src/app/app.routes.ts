@@ -10,6 +10,10 @@ import { loginGuard } from './core/guards/login-guard';
 export const routes: Routes = [
   { path: '', component: Login, canActivate: [loginGuard] },
   { path: 'profile', component: Profile, canActivate: [authGuard] },
-  { path: 'admin', component: AdminDashboard, canActivate: [authGuard, roleGuard] },
+  {
+    path: 'admin',
+    component: AdminDashboard,
+    canActivate: [authGuard, roleGuard],
+  },
   { path: '**', redirectTo: '' },
 ];

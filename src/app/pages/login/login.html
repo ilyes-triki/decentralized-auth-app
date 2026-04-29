@@ -1,4 +1,3 @@
-<div class="container">
-  <h1>Decentralized Authentication</h1>
-  <button (click)="connectWallet()">Connect with MetaMask</button>
-</div>
+<button (click)="connectWallet()" [disabled]="isConnecting">
+  {{ isConnecting ? 'Connecting...' : 'Connect with MetaMask' }}
+</button>

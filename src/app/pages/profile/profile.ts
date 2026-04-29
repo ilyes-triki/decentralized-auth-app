@@ -1,26 +1,18 @@
-import { Component, OnInit } from '@angular/core';
-import { AuthService } from '../../services/auth';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { ApiService } from '../../services/api'; // 👈 ADD
+import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   templateUrl: './profile.html',
 })
-export class Profile implements OnInit {
-  user: any;
+export class Profile {
+  private router = inject(Router); // 🔥 stronger injection
+  constructor(public auth: AuthService) {}
 
-  constructor(
-    private auth: AuthService,
-    private router: Router,
-    private api: ApiService,
-  ) {}
-
-  ngOnInit() {
-    this.user = this.auth.getUser();
-
-    this.api.testBackend().then((res) => console.log(res));
+  get user() {
+    return this.auth.getUser();
   }
 
   logout() {

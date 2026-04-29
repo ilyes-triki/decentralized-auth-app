@@ -4,4 +4,7 @@
   <button routerLink="/profile">Profile</button>
   <button routerLink="/admin">Admin</button>
   <button (click)="logout()">Logout</button>
+  @if (auth.isAdmin()) {
+    <a routerLink="/admin">Admin Panel</a>
+  }
 </nav>
