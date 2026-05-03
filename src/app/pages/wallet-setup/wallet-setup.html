@@ -1,0 +1,54 @@
+<section class="setup-page">
+  <div class="setup-card">
+    <div class="hero-row">
+      <div class="icon-chip" aria-hidden="true">M</div>
+      <p class="eyebrow">Wallet setup</p>
+    </div>
+    <h1>Install MetaMask in 3 simple steps</h1>
+    <p class="subtitle">
+      To keep your account secure, sign-in uses wallet signatures instead of passwords.
+      Follow the steps below and come right back.
+    </p>
+
+    <ol class="steps">
+      <li>
+        <span class="step-index">1</span>
+        <h2>Install the extension</h2>
+        <p>Use the official MetaMask site and add it to your browser.</p>
+      </li>
+      <li>
+        <span class="step-index">2</span>
+        <h2>Create or import your wallet</h2>
+        <p>Open MetaMask and complete onboarding with your recovery phrase or a new wallet.</p>
+      </li>
+      <li>
+        <span class="step-index">3</span>
+        <h2>Return here and verify</h2>
+        <p>Click the verify button below and continue sign-in.</p>
+      </li>
+    </ol>
+
+    <div class="actions">
+      <a
+        class="btn-primary action-link"
+        href="https://metamask.io/download/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Install MetaMask
+      </a>
+      <button class="btn-secondary" (click)="verifySetup()" [disabled]="isChecking">
+        {{ isChecking ? 'Checking...' : 'I installed it, verify now' }}
+      </button>
+      <div class="footer-links">
+        <a class="text-link" routerLink="/">Home</a>
+        <span class="link-sep" aria-hidden="true">·</span>
+        <a class="text-link" routerLink="/login">Sign in</a>
+      </div>
+    </div>
+
+    @if (statusMessage) {
+      <p class="status-message" [class.success]="isSuccess">{{ statusMessage }}</p>
+    }
+  </div>
+</section>

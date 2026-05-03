@@ -1,3 +1,7 @@
+// SSR runs in Node: browser polyfills from angular.json are not applied here.
+// provideZoneChangeDetection() requires Zone before bootstrap (NG0908 otherwise).
+import 'zone.js/node';
+
 import { BootstrapContext, bootstrapApplication } from '@angular/platform-browser';
 import { App } from './app/app';
 import { config } from './app/app.config.server';

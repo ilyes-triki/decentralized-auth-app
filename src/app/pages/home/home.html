@@ -1,0 +1,79 @@
+<section class="home">
+  <div class="home__glow home__glow--1" aria-hidden="true"></div>
+  <div class="home__glow home__glow--2" aria-hidden="true"></div>
+
+  <div class="home__inner">
+    <header class="home__hero">
+      <p class="home__eyebrow">Wallet-native authentication</p>
+      <h1 class="home__title">
+        Sign in with <span class="home__title-accent">MetaMask</span>.<br />
+        No passwords to leak.
+      </h1>
+      <p class="home__lead">
+        Challenge–response signatures, server-issued sessions, and a clear path from install to
+        verified profile — built for a modern decentralized auth flow.
+      </p>
+
+      <div class="home__cta-row">
+        @if (auth.isLoggedIn()) {
+          <a routerLink="/profile" class="home__btn home__btn--primary">Open your profile</a>
+          @if (auth.isAdmin()) {
+            <a routerLink="/admin" class="home__btn home__btn--ghost">Admin dashboard</a>
+          }
+        } @else {
+          <a routerLink="/login" class="home__btn home__btn--primary">Sign in with wallet</a>
+          <a routerLink="/wallet-setup" class="home__btn home__btn--secondary">Wallet setup guide</a>
+        }
+      </div>
+
+      @if (auth.getUser(); as u) {
+        <p class="home__session">
+          Signed in as <span class="home__mono">{{ shortAddress(u.address) }}</span>
+          <span class="home__role">{{ u.role }}</span>
+        </p>
+      }
+    </header>
+
+    <div class="home__panels">
+      <article class="home__card">
+        <div class="home__card-icon" aria-hidden="true">01</div>
+        <h2>Signature-based login</h2>
+        <p>Your wallet proves identity with a cryptographic signature — nothing reusable is stored as a password.</p>
+      </article>
+      <article class="home__card">
+        <div class="home__card-icon home__card-icon--violet" aria-hidden="true">02</div>
+        <h2>Server-backed session</h2>
+        <p>After sign-in, verify your session against the API from your profile for a full end-to-end check.</p>
+      </article>
+      <article class="home__card">
+        <div class="home__card-icon home__card-icon--teal" aria-hidden="true">03</div>
+        <h2>Admin visibility</h2>
+        <p>Administrators get analytics and access telemetry to monitor usage responsibly.</p>
+      </article>
+    </div>
+
+    <ol class="home__steps" aria-label="How it works">
+      <li>
+        <span class="home__step-num">1</span>
+        <div>
+          <strong>Install MetaMask</strong>
+          <span>Use our guided setup, then return here.</span>
+        </div>
+      </li>
+      <li>
+        <span class="home__step-num">2</span>
+        <div>
+          <strong>Connect &amp; sign</strong>
+          <span>Approve the connection and sign the server challenge.</span>
+        </div>
+      </li>
+      <li>
+        <span class="home__step-num">3</span>
+        <div>
+          <strong>Verify &amp; explore</strong>
+          <span>Confirm your session on the profile page; admins can open the dashboard.</span>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>

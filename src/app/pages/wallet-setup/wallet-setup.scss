@@ -1,0 +1,154 @@
+.setup-page {
+  min-height: calc(100dvh - 5.25rem);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem 0.9rem 2.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.16), transparent 45%),
+    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.14), transparent 45%);
+}
+
+.setup-card {
+  width: min(720px, 100%);
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.hero-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.icon-chip {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.55rem, 2.8vw, 2rem);
+}
+
+.subtitle {
+  margin: 0.8rem 0 1.25rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.steps {
+  margin: 0 0 1.5rem;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.steps li {
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+  background: #fafbff;
+  position: relative;
+  padding-left: 3rem;
+}
+
+.step-index {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.9rem;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.steps h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.steps p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.action-link {
+  text-align: center;
+  text-decoration: none;
+}
+
+.status-message {
+  margin: 1rem 0 0;
+  color: #ef4444;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.status-message.success {
+  color: #16a34a;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.link-sep {
+  color: var(--border);
+  user-select: none;
+}
+
+.text-link {
+  text-align: center;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.text-link:hover {
+  color: var(--accent-strong);
+}
+
+@media (min-width: 640px) {
+  .setup-page {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .setup-card {
+    padding: 2rem;
+  }
+}

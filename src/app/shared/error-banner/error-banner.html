@@ -1,0 +1,5 @@
+@if (message) {
+  <p class="banner" [class.error]="variant === 'error'" [class.warning]="variant === 'warning'" role="alert">
+    {{ message }}
+  </p>
+}

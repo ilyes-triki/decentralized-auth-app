@@ -7,7 +7,7 @@ export const authGuard = () => {
   const router = inject(Router);
 
   if (!auth.isLoggedIn()) {
-    router.navigate(['/']);
+    router.navigate(['/login']);
     return false;
   }
 

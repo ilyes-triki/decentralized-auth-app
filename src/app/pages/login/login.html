@@ -1,3 +1,35 @@
-<button (click)="connectWallet()" [disabled]="isConnecting">
-  {{ isConnecting ? 'Connecting...' : 'Connect with MetaMask' }}
-</button>
+<section class="login-page">
+  <div class="login-card">
+    <div class="card-header">
+      <div class="icon-chip" aria-hidden="true">W</div>
+      <p class="eyebrow">Secure Access</p>
+    </div>
+    <h1>Sign in with your wallet</h1>
+    <p class="subtitle">
+      Use MetaMask to authenticate with a signed challenge. No password required.
+    </p>
+
+    <div class="feature-row" aria-hidden="true">
+      <span class="feature-pill">Signature-based login</span>
+      <span class="feature-pill">No password storage</span>
+    </div>
+
+    @if (!hasWalletProvider) {
+      <div class="wallet-warning">
+        <p class="warning-title">MetaMask is not detected on this browser.</p>
+        <p class="warning-copy">Open the guided setup page and complete wallet installation first.</p>
+        <a class="btn-secondary cta-link" routerLink="/wallet-setup">Open setup guide</a>
+      </div>
+    } @else {
+      <button class="btn-primary cta" (click)="connectWallet()" [disabled]="isConnecting">
+        {{ isConnecting ? 'Connecting...' : 'Connect with MetaMask' }}
+      </button>
+    }
+
+    <app-error-banner [message]="errorMessage" />
+
+    <p class="login-footer">
+      <a routerLink="/" class="text-link-muted">← Back to home</a>
+    </p>
+  </div>
+</section>

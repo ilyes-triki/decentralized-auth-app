@@ -1,19 +1,13 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  template: `
-    @if (auth.isLoggedIn()) {
-      <nav>
-        <button (click)="goProfile()">Profile</button>
-        <button (click)="goAdmin()">Admin</button>
-        <button (click)="logout()">Logout</button>
-      </nav>
-    }
-  `,
+  imports: [RouterLink, RouterLinkActive],
+  templateUrl: './navbar.html',
+  styleUrl: './navbar.scss',
 })
 export class Navbar {
   constructor(
@@ -21,14 +15,16 @@ export class Navbar {
     private router: Router,
   ) {}
 
-  goProfile() {
-    this.router.navigate(['/profile']);
+  get isLoggedIn(): boolean {
+    return this.auth.isLoggedIn();
   }
-  goAdmin() {
-    this.router.navigate(['/admin']);
+
+  get isAdmin(): boolean {
+    return this.auth.isAdmin();
   }
+
   logout() {
     this.auth.logout();
-    this.router.navigate(['/']);
+    void this.router.navigate(['/']);
   }
 }

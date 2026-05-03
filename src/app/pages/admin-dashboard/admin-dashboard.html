@@ -1,2 +1,196 @@
-<h2>Admin Dashboard</h2>
-<p>Audit logs will appear here</p>
+<section class="admin-page">
+  <div class="admin-card">
+    <p class="eyebrow">Administration</p>
+    <h2>Admin Dashboard</h2>
+    <p class="subtitle">This area is protected by server-side role checks.</p>
+
+    <div class="status-panel">
+      <div class="row">
+        <span class="label">Server status</span>
+        <span class="value">
+          @if (isChecking) {
+            Checking…
+          } @else if (status) {
+            {{ status }}
+          } @else {
+            Unknown
+          }
+        </span>
+      </div>
+
+      <div class="row">
+        <span class="label">Scope</span>
+        <span class="value">{{ scope || 'N/A' }}</span>
+      </div>
+
+      <app-error-banner [message]="errorMessage" />
+    </div>
+
+    <button class="btn-secondary" (click)="checkAdminAccess()" [disabled]="isChecking">
+      {{ isChecking ? 'Checking...' : 'Re-check admin access' }}
+    </button>
+
+    <div class="stats-section">
+      <div class="section-toolbar">
+        <h3>Login analytics</h3>
+        <label class="window-control">
+          <span class="window-label">Time range</span>
+          <select
+            class="window-select"
+            [value]="timeWindow"
+            (change)="onTimeWindowChange($event)"
+            [disabled]="isChecking || isLoadingStats || isLoadingHistory || isLoadingAccessLog"
+          >
+            <option value="all">All time</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+          </select>
+        </label>
+      </div>
+      <app-error-banner [message]="statsError" />
+      @if (isLoadingStats && !loginStats) {
+        <div class="skeleton-stats" aria-hidden="true">
+          <div class="skeleton-tile"></div>
+          <div class="skeleton-tile"></div>
+          <div class="skeleton-tile"></div>
+        </div>
+      } @else if (loginStats) {
+        <div class="stats-grid">
+          <div class="stat-tile">
+            <span class="stat-label">Total attempts</span>
+            <span class="stat-value">{{ loginStats.totalAttempts }}</span>
+          </div>
+          <div class="stat-tile ok">
+            <span class="stat-label">Successful</span>
+            <span class="stat-value">{{ loginStats.successfulAttempts }}</span>
+          </div>
+          <div class="stat-tile bad">
+            <span class="stat-label">Failed</span>
+            <span class="stat-value">{{ loginStats.failedAttempts }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (chartDays.length > 0) {
+      <div class="chart-section" aria-label="Login attempts by calendar day from loaded sample">
+        <h3>Attempts by day</h3>
+        <p class="chart-note">
+          Based on the latest 50 rows returned for the selected range (sample, not a full time-series API).
+        </p>
+        <div class="chart">
+          @for (row of chartDays; track row.day) {
+            <div class="chart-row">
+              <span class="chart-label">{{ row.day }}</span>
+              <div class="chart-bar" [attr.aria-label]="row.day + ': ' + row.success + ' success, ' + row.fail + ' failed'">
+                <div class="chart-seg ok" [style.width.%]="row.successPct"></div>
+                <div class="chart-seg bad" [style.width.%]="row.failPct"></div>
+              </div>
+              <span class="chart-meta">{{ row.success }} ok · {{ row.fail }} fail</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="history access-log-block">
+      <div class="history-head">
+        <h3>HTTP access log (latest 80)</h3>
+        <p class="subtitle small-note">
+          Persisted request audit: method, path, status, duration, optional authenticated principal. Admin health polls are excluded.
+        </p>
+      </div>
+      <app-error-banner [message]="accessLogError" />
+      @if (isLoadingAccessLog && accessLogRows.length === 0) {
+        <div class="skeleton-table" aria-hidden="true">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="skeleton-row"></div>
+          }
+        </div>
+      } @else if (accessLogRows.length === 0) {
+        <p class="subtitle">No access log rows yet. Use the app (login, profile) to generate traffic.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Method</th>
+                <th>Path</th>
+                <th>Status</th>
+                <th>ms</th>
+                <th>Principal</th>
+                <th class="mono narrow">Request ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of accessLogRows; track row.id) {
+                <tr>
+                  <td class="mono">{{ row.createdAt }}</td>
+                  <td>{{ row.httpMethod }}</td>
+                  <td class="mono path-cell">{{ row.path }}</td>
+                  <td>{{ row.statusCode }}</td>
+                  <td>{{ row.durationMs }}</td>
+                  <td class="mono">{{ row.principal || '—' }}</td>
+                  <td class="mono narrow">{{ row.requestId }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="history">
+      <div class="history-head">
+        <h3>Login history (latest 50, filtered by range)</h3>
+        <button
+          class="btn-secondary"
+          (click)="refreshDashboardData({ toastOnSuccess: true })"
+          [disabled]="isLoadingHistory || isLoadingStats || isLoadingAccessLog || isChecking"
+        >
+          {{ isLoadingHistory || isLoadingStats || isLoadingAccessLog ? 'Loading...' : 'Refresh' }}
+        </button>
+      </div>
+
+      @if (historyError) {
+        <app-error-banner [message]="historyError" />
+      } @else if (isLoadingHistory) {
+        <div class="skeleton-table" aria-hidden="true">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="skeleton-row"></div>
+          }
+        </div>
+      } @else if (loginHistory.length === 0) {
+        <p class="subtitle">No history entries found yet.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Address</th>
+                <th>Result</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of loginHistory; track row.id) {
+                <tr>
+                  <td class="mono">{{ row.createdAt }}</td>
+                  <td class="mono">{{ row.address }}</td>
+                  <td>
+                    <span class="pill" [class.ok]="row.successful" [class.bad]="!row.successful">
+                      {{ row.successful ? 'Success' : 'Fail' }}
+                    </span>
+                  </td>
+                  <td>{{ row.failureReason || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</section>

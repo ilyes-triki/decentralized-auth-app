@@ -1,10 +1,33 @@
-<nav>
-  <span>Decentralized Auth</span>
+<header class="nav-shell">
+  <nav class="nav" aria-label="Main">
+    <a
+      routerLink="/"
+      class="brand"
+      routerLinkActive="brand--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">Decentralized Auth</span>
+    </a>
 
-  <button routerLink="/profile">Profile</button>
-  <button routerLink="/admin">Admin</button>
-  <button (click)="logout()">Logout</button>
-  @if (auth.isAdmin()) {
-    <a routerLink="/admin">Admin Panel</a>
-  }
-</nav>
+    <div class="actions">
+      <a
+        routerLink="/"
+        class="nav-link"
+        routerLinkActive="nav-link--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        >Home</a>
+      <a routerLink="/wallet-setup" class="nav-link" routerLinkActive="nav-link--active">Wallet setup</a>
+
+      @if (isLoggedIn) {
+        <a routerLink="/profile" class="nav-link" routerLinkActive="nav-link--active">Profile</a>
+        @if (isAdmin) {
+          <a routerLink="/admin" class="nav-link" routerLinkActive="nav-link--active">Admin</a>
+        }
+        <button class="btn-logout" type="button" (click)="logout()">Logout</button>
+      } @else {
+        <a routerLink="/login" class="nav-link nav-link--cta" routerLinkActive="nav-link--active">Sign in</a>
+      }
+    </div>
+  </nav>
+</header>

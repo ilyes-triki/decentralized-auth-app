@@ -9,7 +9,7 @@ export const roleGuard = () => {
   const user = auth.getUser();
 
   if (!user) {
-    router.navigate(['/']);
+    router.navigate(['/login']);
     return false;
   }
 

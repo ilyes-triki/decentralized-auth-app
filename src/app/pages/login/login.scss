@@ -1,22 +1,128 @@
-.container {
-  height: 100vh;
+.login-page {
+  min-height: calc(100dvh - 5.25rem);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem 0.9rem 2.5rem;
+}
+
+.login-card {
+  width: min(560px, 100%);
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.card-header {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 20px;
+  gap: 0.6rem;
 }
 
-button {
-  padding: 12px 24px;
-  border: none;
-  background-color: #f6851b; // MetaMask color
-  color: white;
-  font-weight: bold;
-  border-radius: 8px;
-  cursor: pointer;
+.icon-chip {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, var(--accent-soft), #e0e7ff);
+  color: var(--accent-strong);
+  font-weight: 700;
+  font-size: 0.86rem;
 }
 
-button:hover {
-  opacity: 0.9;
+.eyebrow {
+  margin: 0 0 0.4rem;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+}
+
+.subtitle {
+  margin: 0.8rem 0 1.5rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.feature-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.feature-pill {
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.cta {
+  width: 100%;
+  padding: 0.85rem 1rem;
+}
+
+.wallet-warning {
+  border: 1px solid #f59e0b55;
+  background: #f59e0b14;
+  border-radius: 0.8rem;
+  padding: 1rem;
+}
+
+.warning-title {
+  margin: 0 0 0.8rem;
+  color: #d97706;
+  font-weight: 600;
+}
+
+.warning-copy {
+  margin: 0 0 0.8rem;
+  color: #92400e;
+  line-height: 1.45;
+}
+
+.cta-link {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+}
+
+.login-footer {
+  margin: 1.35rem 0 0;
+  text-align: center;
+}
+
+.text-link-muted {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.text-link-muted:hover {
+  color: var(--accent-strong);
+}
+
+@media (min-width: 640px) {
+  .login-page {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .login-card {
+    padding: 2rem;
+  }
 }
