@@ -2,6 +2,9 @@
 
 Angular single-page application for **email OTP + MetaMask** sign-in (or any injected Ethereum provider). It talks to the backend REST API for email verification, nonce retrieval, login, profile verification, and optional admin dashboards (including **IP risk events** and **blocklist** moderation).
 
+Features: OTP + wallet auth UI, trusted returning-wallet login path, blocked-account appeal flow, admin security dashboard.  
+API base URL examples used by the app: `/api/auth` (auth calls) and `/api/admin` (admin calls via shared API root).
+
 ---
 
 ## Tech stack
@@ -31,6 +34,8 @@ The backend API should be running when you exercise login and authenticated rout
 ### Install dependencies
 
 ```bash
+git clone <your-repo-url>
+cd decentralized-auth
 npm install
 ```
 
@@ -56,6 +61,13 @@ http://localhost:8080/api/auth
 ```
 
 `ApiService` treats URLs ending in `/api/auth` as the auth prefix and derives **`/api`** for profile and admin calls. Change these files (or replace with file replacements / CI variables) when deploying so the UI targets your deployed backend.
+
+### Minimum environment for cloned project
+
+- Set `src/environments/environment.ts` `apiBaseUrl` to your backend auth base (default: `http://localhost:8080/api/auth`).
+- Set `src/environments/environment.production.ts` for deployed environments (HTTPS backend URL).
+- Ensure backend `APP_CORS_ALLOWED_ORIGINS` includes your frontend origin (`http://localhost:4200` in dev).
+- No frontend secret file is required by default; authentication secrets live on backend only.
 
 ---
 
