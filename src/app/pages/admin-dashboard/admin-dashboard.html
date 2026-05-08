@@ -30,70 +30,253 @@
       {{ isChecking ? 'Checking...' : 'Re-check admin access' }}
     </button>
 
-    <div class="stats-section">
-      <div class="section-toolbar">
-        <h3>Login analytics</h3>
+    <div class="history-head admin-subnav">
+      <a class="btn-secondary" routerLink="/admin/overview">Overview</a>
+      <a class="btn-secondary" routerLink="/admin/ip-security">IP security</a>
+      <a class="btn-secondary" routerLink="/admin/access-log">Access log</a>
+      <a class="btn-secondary" routerLink="/admin/appeals">Appeals</a>
+      <button
+        class="btn-secondary"
+        (click)="refreshDashboardData({ toastOnSuccess: true })"
+        [disabled]="isLoadingHistory || isLoadingStats || isLoadingAccessLog || isLoadingIpEvents || isLoadingIpBlocks || isChecking"
+      >
+        {{
+          isLoadingHistory || isLoadingStats || isLoadingAccessLog || isLoadingIpEvents || isLoadingIpBlocks
+            ? 'Loading...'
+            : 'Refresh section'
+        }}
+      </button>
+    </div>
+
+    @if (currentSection === 'overview') {
+      <div class="stats-section">
+        <div class="section-toolbar">
+          <h3>Login analytics</h3>
+          <label class="window-control">
+            <span class="window-label">Time range</span>
+            <select
+              class="window-select"
+              [value]="timeWindow"
+              (change)="onTimeWindowChange($event)"
+              [disabled]="isChecking || isLoadingStats || isLoadingHistory"
+            >
+              <option value="all">All time</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+            </select>
+          </label>
+        </div>
+        <app-error-banner [message]="statsError" />
+        @if (isLoadingStats && !loginStats) {
+          <div class="skeleton-stats" aria-hidden="true">
+            <div class="skeleton-tile"></div>
+            <div class="skeleton-tile"></div>
+            <div class="skeleton-tile"></div>
+          </div>
+        } @else if (loginStats) {
+          <div class="stats-grid">
+            <div class="stat-tile">
+              <span class="stat-label">Total attempts</span>
+              <span class="stat-value">{{ loginStats.totalAttempts }}</span>
+            </div>
+            <div class="stat-tile ok">
+              <span class="stat-label">Successful</span>
+              <span class="stat-value">{{ loginStats.successfulAttempts }}</span>
+            </div>
+            <div class="stat-tile bad">
+              <span class="stat-label">Failed</span>
+              <span class="stat-value">{{ loginStats.failedAttempts }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (chartDays.length > 0) {
+        <div class="chart-section" aria-label="Login attempts by calendar day from loaded sample">
+          <h3>Attempts by day</h3>
+          <p class="chart-note">
+            Based on the latest 50 rows returned for the selected range (sample, not a full time-series API).
+          </p>
+          <div class="chart">
+            @for (row of chartDays; track row.day) {
+              <div class="chart-row">
+                <span class="chart-label">{{ row.day }}</span>
+                <div class="chart-bar" [attr.aria-label]="row.day + ': ' + row.success + ' success, ' + row.fail + ' failed'">
+                  <div class="chart-seg ok" [style.width.%]="row.successPct"></div>
+                  <div class="chart-seg bad" [style.width.%]="row.failPct"></div>
+                </div>
+                <span class="chart-meta">{{ row.success }} ok · {{ row.fail }} fail</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="history">
+        <div class="history-head">
+          <h3>Login history (latest 50, filtered by range)</h3>
+        </div>
+
+        @if (historyError) {
+          <app-error-banner [message]="historyError" />
+        } @else if (isLoadingHistory) {
+          <div class="skeleton-table" aria-hidden="true">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else if (loginHistory.length === 0) {
+          <p class="subtitle">No history entries found yet.</p>
+        } @else {
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Address</th>
+                  <th>Result</th>
+                  <th>Reason</th>
+                  <th>Client IP</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of loginHistory; track row.id) {
+                  <tr>
+                    <td class="mono">{{ row.createdAt }}</td>
+                    <td class="mono">{{ row.address }}</td>
+                    <td>
+                      <span class="pill" [class.ok]="row.successful" [class.bad]="!row.successful">
+                        {{ row.successful ? 'Success' : 'Fail' }}
+                      </span>
+                    </td>
+                    <td>{{ row.failureReason || '—' }}</td>
+                    <td class="mono">{{ row.clientIp || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    @if (currentSection === 'ip-security') {
+      <div class="history ip-security-block">
+      <div class="history-head">
+        <h3>IP risk events</h3>
         <label class="window-control">
-          <span class="window-label">Time range</span>
-          <select
-            class="window-select"
-            [value]="timeWindow"
-            (change)="onTimeWindowChange($event)"
-            [disabled]="isChecking || isLoadingStats || isLoadingHistory || isLoadingAccessLog"
-          >
-            <option value="all">All time</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
+          <span class="window-label">Risk</span>
+          <select class="window-select" [value]="ipEventRisk" (change)="onIpRiskFilterChange($event)">
+            <option value="">All</option>
+            <option value="LOW">LOW</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="HIGH">HIGH</option>
           </select>
         </label>
       </div>
-      <app-error-banner [message]="statsError" />
-      @if (isLoadingStats && !loginStats) {
-        <div class="skeleton-stats" aria-hidden="true">
-          <div class="skeleton-tile"></div>
-          <div class="skeleton-tile"></div>
-          <div class="skeleton-tile"></div>
+      <app-error-banner [message]="ipEventsError" />
+      @if (isLoadingIpEvents && ipEvents.length === 0) {
+        <div class="skeleton-table" aria-hidden="true">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="skeleton-row"></div>
+          }
         </div>
-      } @else if (loginStats) {
-        <div class="stats-grid">
-          <div class="stat-tile">
-            <span class="stat-label">Total attempts</span>
-            <span class="stat-value">{{ loginStats.totalAttempts }}</span>
-          </div>
-          <div class="stat-tile ok">
-            <span class="stat-label">Successful</span>
-            <span class="stat-value">{{ loginStats.successfulAttempts }}</span>
-          </div>
-          <div class="stat-tile bad">
-            <span class="stat-label">Failed</span>
-            <span class="stat-value">{{ loginStats.failedAttempts }}</span>
-          </div>
+      } @else if (ipEvents.length === 0) {
+        <p class="subtitle">No IP risk events recorded yet.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>IP</th>
+                <th>Risk</th>
+                <th>Reason</th>
+                <th>Path</th>
+                <th>Request ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of ipEvents; track row.id) {
+                <tr>
+                  <td class="mono">{{ row.createdAt }}</td>
+                  <td class="mono">{{ row.ip }}</td>
+                  <td>
+                    <span class="pill" [class.bad]="row.riskLevel === 'HIGH'" [class.warn]="row.riskLevel === 'MEDIUM'">{{
+                      row.riskLevel
+                    }}</span>
+                  </td>
+                  <td>{{ row.reason }}</td>
+                  <td class="mono path-cell">{{ row.path }}</td>
+                  <td class="mono narrow">{{ row.requestId }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       }
     </div>
 
-    @if (chartDays.length > 0) {
-      <div class="chart-section" aria-label="Login attempts by calendar day from loaded sample">
-        <h3>Attempts by day</h3>
-        <p class="chart-note">
-          Based on the latest 50 rows returned for the selected range (sample, not a full time-series API).
-        </p>
-        <div class="chart">
-          @for (row of chartDays; track row.day) {
-            <div class="chart-row">
-              <span class="chart-label">{{ row.day }}</span>
-              <div class="chart-bar" [attr.aria-label]="row.day + ': ' + row.success + ' success, ' + row.fail + ' failed'">
-                <div class="chart-seg ok" [style.width.%]="row.successPct"></div>
-                <div class="chart-seg bad" [style.width.%]="row.failPct"></div>
-              </div>
-              <span class="chart-meta">{{ row.success }} ok · {{ row.fail }} fail</span>
-            </div>
-          }
+      <div class="history ip-blocks-block">
+        <div class="history-head">
+          <h3>Blocked IPs</h3>
         </div>
+        <app-error-banner [message]="ipBlocksError" />
+        <div class="manual-block">
+          <h4>Manual block</h4>
+          <div class="manual-block-grid">
+            <input class="window-select ip-input" type="text" [(ngModel)]="blockIpInput" placeholder="IPv4 / IPv6" />
+            <input class="window-select ip-input" type="text" [(ngModel)]="blockReasonInput" placeholder="Reason" />
+            <label class="chk">
+              <input type="checkbox" [(ngModel)]="blockPermanent" />
+              Permanent
+            </label>
+            <button class="btn-secondary" type="button" (click)="submitManualBlock()" [disabled]="isBlockingIp">
+              {{ isBlockingIp ? 'Blocking…' : 'Block IP' }}
+            </button>
+          </div>
+        </div>
+        @if (isLoadingIpBlocks && ipBlocks.length === 0) {
+          <div class="skeleton-table" aria-hidden="true">
+            @for (i of [1, 2]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else if (ipBlocks.length === 0) {
+          <p class="subtitle">No blocked IPs.</p>
+        } @else {
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>IP</th>
+                  <th>Source</th>
+                  <th>Reason</th>
+                  <th>Until</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of ipBlocks; track row.ip) {
+                  <tr>
+                    <td class="mono">{{ row.ip }}</td>
+                    <td>{{ row.source }}</td>
+                    <td>{{ row.reason }}</td>
+                    <td class="mono">{{ row.blockedUntil || 'Permanent' }}</td>
+                    <td>
+                      <button class="btn-secondary btn-tiny" type="button" (click)="unblockListedIp(row.ip)">Unblock</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
     }
 
-    <div class="history access-log-block">
+    @if (currentSection === 'access-log') {
+      <div class="history access-log-block">
       <div class="history-head">
         <h3>HTTP access log (latest 80)</h3>
         <p class="subtitle small-note">
@@ -140,57 +323,77 @@
         </div>
       }
     </div>
+    }
 
-    <div class="history">
-      <div class="history-head">
-        <h3>Login history (latest 50, filtered by range)</h3>
-        <button
-          class="btn-secondary"
-          (click)="refreshDashboardData({ toastOnSuccess: true })"
-          [disabled]="isLoadingHistory || isLoadingStats || isLoadingAccessLog || isChecking"
-        >
-          {{ isLoadingHistory || isLoadingStats || isLoadingAccessLog ? 'Loading...' : 'Refresh' }}
-        </button>
-      </div>
-
-      @if (historyError) {
-        <app-error-banner [message]="historyError" />
-      } @else if (isLoadingHistory) {
-        <div class="skeleton-table" aria-hidden="true">
-          @for (i of [1, 2, 3, 4, 5]; track i) {
-            <div class="skeleton-row"></div>
-          }
+    @if (currentSection === 'appeals') {
+      <div class="history">
+        <div class="history-head">
+          <h3>Account block appeals</h3>
+          <label class="window-control">
+            <span class="window-label">Status</span>
+            <select class="window-select" [value]="appealStatusFilter" (change)="onAppealFilterChange($event)">
+              <option value="">All</option>
+              <option value="OPEN">OPEN</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </label>
         </div>
-      } @else if (loginHistory.length === 0) {
-        <p class="subtitle">No history entries found yet.</p>
-      } @else {
-        <div class="table-wrap">
-          <table class="history-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Address</th>
-                <th>Result</th>
-                <th>Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of loginHistory; track row.id) {
+        <app-error-banner [message]="appealsError" />
+        @if (isLoadingAppeals && appeals.length === 0) {
+          <div class="skeleton-table" aria-hidden="true">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="skeleton-row"></div>
+            }
+          </div>
+        } @else if (appeals.length === 0) {
+          <p class="subtitle">No appeals found.</p>
+        } @else {
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
                 <tr>
-                  <td class="mono">{{ row.createdAt }}</td>
-                  <td class="mono">{{ row.address }}</td>
-                  <td>
-                    <span class="pill" [class.ok]="row.successful" [class.bad]="!row.successful">
-                      {{ row.successful ? 'Success' : 'Fail' }}
-                    </span>
-                  </td>
-                  <td>{{ row.failureReason || '—' }}</td>
+                  <th>ID</th>
+                  <th>Wallet</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Justification</th>
+                  <th>Evidence</th>
+                  <th>Created</th>
+                  <th>Action</th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </div>
+              </thead>
+              <tbody>
+                @for (row of appeals; track row.id) {
+                  <tr>
+                    <td class="mono">{{ row.id }}</td>
+                    <td class="mono">{{ row.walletAddress }}</td>
+                    <td>{{ row.email || '—' }}</td>
+                    <td><span class="pill" [class.warn]="row.status === 'OPEN'" [class.ok]="row.status === 'APPROVED'" [class.bad]="row.status === 'REJECTED'">{{ row.status }}</span></td>
+                    <td>{{ row.justification }}</td>
+                    <td>
+                      @if (row.evidenceUrl) {
+                        <a [href]="row.evidenceUrl" target="_blank" rel="noopener noreferrer">link</a>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="mono">{{ row.createdAt }}</td>
+                    <td>
+                      @if (row.status === 'OPEN') {
+                        <button class="btn-secondary btn-tiny" type="button" (click)="resolveAppeal(row.id, true)" [disabled]="resolvingAppealId === row.id">Approve</button>
+                        <button class="btn-secondary btn-tiny" type="button" (click)="resolveAppeal(row.id, false)" [disabled]="resolvingAppealId === row.id">Reject</button>
+                      } @else {
+                        —
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
   </div>
 </section>

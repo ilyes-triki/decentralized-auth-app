@@ -1,4 +1,6 @@
 import { ChangeDetectorRef, Component, DestroyRef, NgZone, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EmptyError, Observable, Subject } from 'rxjs';
 import { ApiService } from '../../services/api';
 import { AuthService } from '../../services/auth';
@@ -18,11 +20,12 @@ type AdminChartDay = {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [ErrorBanner],
+  imports: [ErrorBanner, FormsModule, RouterLink],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
 export class AdminDashboard implements OnInit {
+  currentSection: 'overview' | 'ip-security' | 'access-log' | 'appeals' = 'overview';
   /** Relative window for stats + history; sent as ISO `since` to the API (UTC). */
   timeWindow: 'all' | '7d' | '30d' = 'all';
 
@@ -41,6 +44,7 @@ export class AdminDashboard implements OnInit {
     successful: boolean;
     failureReason: string | null;
     createdAt: string;
+    clientIp?: string | null;
   }[] = [];
   /** Aggregated from the current (latest 50) history sample for a simple bar chart. */
   chartDays: AdminChartDay[] = [];
@@ -57,6 +61,54 @@ export class AdminDashboard implements OnInit {
   isLoadingAccessLog = false;
   accessLogError = '';
 
+  ipEventRisk: '' | 'LOW' | 'MEDIUM' | 'HIGH' = '';
+  ipEvents: {
+    id: number;
+    ip: string;
+    riskLevel: string;
+    reason: string;
+    path: string;
+    httpMethod: string;
+    requestId: string;
+    createdAt: string;
+    details: string | null;
+  }[] = [];
+  ipBlocks: {
+    ip: string;
+    source: string;
+    reason: string;
+    blockedUntil: string | null;
+    createdAt: string;
+    createdBy: string | null;
+  }[] = [];
+  isLoadingIpEvents = false;
+  isLoadingIpBlocks = false;
+  ipEventsError = '';
+  ipBlocksError = '';
+  blockIpInput = '';
+  blockReasonInput = '';
+  blockPermanent = false;
+  isBlockingIp = false;
+  appealStatusFilter: '' | 'OPEN' | 'APPROVED' | 'REJECTED' = '';
+  appeals: {
+    id: number;
+    walletAddress: string;
+    email: string | null;
+    justification: string;
+    evidenceUrl: string | null;
+    status: string;
+    adminNote: string | null;
+    createdAt: string;
+    resolvedAt: string | null;
+    resolvedBy: string | null;
+  }[] = [];
+  isLoadingAppeals = false;
+  appealsError = '';
+  resolvingAppealId: number | null = null;
+  private ipEventsLoadId = 0;
+  private ipBlocksLoadId = 0;
+  private appealsLoadId = 0;
+
   private destroyRef = inject(DestroyRef);
   private readonly zone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -69,6 +121,7 @@ export class AdminDashboard implements OnInit {
   private adminInitialLoad = true;
 
   constructor(
+    private route: ActivatedRoute,
     private auth: AuthService,
     private api: ApiService,
     private toast: ToastService,
@@ -80,7 +133,21 @@ export class AdminDashboard implements OnInit {
   }
 
   ngOnInit(): void {
+    this.route.paramMap.subscribe((params) => {
+      const section = params.get('section');
+      this.currentSection = this.normalizeSection(section);
+      if (this.status) {
+        void this.refreshDashboardData();
+      }
+    });
     void this.checkAdminAccess();
+  }
+
+  private normalizeSection(section: string | null): 'overview' | 'ip-security' | 'access-log' | 'appeals' {
+    if (section === 'ip-security' || section === 'access-log' || section === 'appeals') {
+      return section;
+    }
+    return 'overview';
   }
 
   /** Next admin data load cancels any in-flight admin API requests. */
@@ -149,6 +216,12 @@ export class AdminDashboard implements OnInit {
     this.chartDays = [];
     this.accessLogRows = [];
     this.accessLogError = '';
+    this.ipEvents = [];
+    this.ipBlocks = [];
+    this.ipEventsError = '';
+    this.ipBlocksError = '';
+    this.appeals = [];
+    this.appealsError = '';
 
     if (!this.adminInitialLoad) {
       this.beginAdminDataLoad();
@@ -163,11 +236,7 @@ export class AdminDashboard implements OnInit {
         this.scope = health.scope;
       });
       const sinceSnapshot = this.sinceParam();
-      await Promise.all([
-        this.loadLoginHistory(cancel$, sinceSnapshot),
-        this.loadLoginStats(cancel$, sinceSnapshot),
-        this.loadAccessLog(cancel$),
-      ]);
+      await this.loadCurrentSection(cancel$, sinceSnapshot);
       this.patchUi(() => {
         this.errorMessage = '';
       });
@@ -272,6 +341,158 @@ export class AdminDashboard implements OnInit {
     }
   }
 
+  async loadIpEvents(cancel$?: Observable<unknown>): Promise<void> {
+    const token = this.auth.getToken();
+    if (!token) {
+      this.ipEventsError = 'No token found. Please sign in again.';
+      return;
+    }
+    const id = ++this.ipEventsLoadId;
+    this.isLoadingIpEvents = true;
+    this.ipEventsError = '';
+    const risk = this.ipEventRisk || undefined;
+    try {
+      const rows = await this.api.getAdminIpEvents(risk, cancel$);
+      this.patchUi(() => {
+        this.ipEvents = rows;
+      });
+    } catch (error) {
+      if (this.isCancelledError(error)) {
+        throw error;
+      }
+      this.patchUi(() => {
+        this.ipEventsError = toUserMessage(error, 'Failed to load IP risk events.');
+      });
+    } finally {
+      this.patchUi(() => {
+        if (id === this.ipEventsLoadId) {
+          this.isLoadingIpEvents = false;
+        }
+      });
+    }
+  }
+
+  async loadIpBlocks(cancel$?: Observable<unknown>): Promise<void> {
+    const token = this.auth.getToken();
+    if (!token) {
+      this.ipBlocksError = 'No token found. Please sign in again.';
+      return;
+    }
+    const id = ++this.ipBlocksLoadId;
+    this.isLoadingIpBlocks = true;
+    this.ipBlocksError = '';
+    try {
+      const rows = await this.api.getAdminIpBlocks(cancel$);
+      this.patchUi(() => {
+        this.ipBlocks = rows;
+      });
+    } catch (error) {
+      if (this.isCancelledError(error)) {
+        throw error;
+      }
+      this.patchUi(() => {
+        this.ipBlocksError = toUserMessage(error, 'Failed to load IP block list.');
+      });
+    } finally {
+      this.patchUi(() => {
+        if (id === this.ipBlocksLoadId) {
+          this.isLoadingIpBlocks = false;
+        }
+      });
+    }
+  }
+
+  onIpRiskFilterChange(event: Event): void {
+    const el = event.target as HTMLSelectElement;
+    const v = el.value;
+    if (v === '' || v === 'LOW' || v === 'MEDIUM' || v === 'HIGH') {
+      this.ipEventRisk = v;
+      void this.loadIpEvents(this.adminCancelStream());
+    }
+  }
+
+  async submitManualBlock(): Promise<void> {
+    const ip = this.blockIpInput.trim();
+    if (!ip) {
+      this.toast.error('Enter an IP address to block.');
+      return;
+    }
+    this.isBlockingIp = true;
+    try {
+      await this.api.adminBlockIp(ip, this.blockReasonInput.trim() || 'Manual block', this.blockPermanent);
+      this.toast.success(`Blocked ${ip}`);
+      this.blockIpInput = '';
+      this.blockReasonInput = '';
+      this.blockPermanent = false;
+      await this.loadIpBlocks();
+      await this.loadIpEvents();
+    } catch (e) {
+      this.toast.error(toUserMessage(e, 'Failed to block IP.'));
+    } finally {
+      this.isBlockingIp = false;
+    }
+  }
+
+  async unblockListedIp(ip: string): Promise<void> {
+    try {
+      await this.api.adminUnblockIp(ip);
+      this.toast.success(`Unblocked ${ip}`);
+      await this.loadIpBlocks();
+    } catch (e) {
+      this.toast.error(toUserMessage(e, 'Failed to unblock IP.'));
+    }
+  }
+
+  async loadAppeals(cancel$?: Observable<unknown>): Promise<void> {
+    const token = this.auth.getToken();
+    if (!token) {
+      this.appealsError = 'No token found. Please sign in again.';
+      return;
+    }
+    const id = ++this.appealsLoadId;
+    this.isLoadingAppeals = true;
+    this.appealsError = '';
+    try {
+      const rows = await this.api.getAdminAccountAppeals(this.appealStatusFilter || undefined, cancel$);
+      this.patchUi(() => {
+        this.appeals = rows;
+      });
+    } catch (error) {
+      if (this.isCancelledError(error)) throw error;
+      this.patchUi(() => {
+        this.appealsError = toUserMessage(error, 'Failed to load account appeals.');
+      });
+    } finally {
+      this.patchUi(() => {
+        if (id === this.appealsLoadId) this.isLoadingAppeals = false;
+      });
+    }
+  }
+
+  onAppealFilterChange(event: Event): void {
+    const el = event.target as HTMLSelectElement;
+    const v = el.value;
+    if (v === '' || v === 'OPEN' || v === 'APPROVED' || v === 'REJECTED') {
+      this.appealStatusFilter = v;
+      void this.loadAppeals(this.adminCancelStream());
+    }
+  }
+
+  async resolveAppeal(id: number, approve: boolean): Promise<void> {
+    const note = window.prompt(approve ? 'Approval note (optional):' : 'Rejection reason (optional):') ?? '';
+    this.resolvingAppealId = id;
+    try {
+      const res = await this.api.resolveAdminAccountAppeal(id, approve, note);
+      this.toast.success(`Appeal #${res.id} resolved (${res.status}).`);
+      await this.loadAppeals();
+      await this.loadIpBlocks();
+    } catch (e) {
+      this.toast.error(toUserMessage(e, 'Failed to resolve appeal.'));
+    } finally {
+      this.resolvingAppealId = null;
+    }
+  }
+
   async loadAccessLog(cancel$?: Observable<unknown>): Promise<void> {
     const token = this.auth.getToken();
     if (!token) {
@@ -311,11 +532,7 @@ export class AdminDashboard implements OnInit {
     const toastOnSuccess = options?.toastOnSuccess === true;
     try {
       const sinceSnapshot = this.sinceParam();
-      await Promise.all([
-        this.loadLoginHistory(cancel$, sinceSnapshot),
-        this.loadLoginStats(cancel$, sinceSnapshot),
-        this.loadAccessLog(cancel$),
-      ]);
+      await this.loadCurrentSection(cancel$, sinceSnapshot);
       if (toastOnSuccess) {
         this.toast.show('Dashboard refreshed');
       }
@@ -325,5 +542,21 @@ export class AdminDashboard implements OnInit {
       }
       throw error;
     }
+  }
+
+  private async loadCurrentSection(cancel$?: Observable<unknown>, since?: string): Promise<void> {
+    if (this.currentSection === 'overview') {
+      await Promise.all([this.loadLoginHistory(cancel$, since), this.loadLoginStats(cancel$, since)]);
+      return;
+    }
+    if (this.currentSection === 'ip-security') {
+      await Promise.all([this.loadIpEvents(cancel$), this.loadIpBlocks(cancel$)]);
+      return;
+    }
+    if (this.currentSection === 'appeals') {
+      await this.loadAppeals(cancel$);
+      return;
+    }
+    await this.loadAccessLog(cancel$);
   }
 }

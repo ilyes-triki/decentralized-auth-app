@@ -1,6 +1,6 @@
 # Decentralized Auth — Frontend
 
-Angular single-page application for wallet-based sign-in with **MetaMask** (or any injected Ethereum provider). It talks to the backend REST API for nonce retrieval, login, profile verification, and optional admin dashboards.
+Angular single-page application for **email OTP + MetaMask** sign-in (or any injected Ethereum provider). It talks to the backend REST API for email verification, nonce retrieval, login, profile verification, and optional admin dashboards (including **IP risk events** and **blocklist** moderation).
 
 ---
 
@@ -55,7 +55,7 @@ Default:
 http://localhost:8080/api/auth
 ```
 
-Change these files (or replace with file replacements / CI variables) when deploying so the UI targets your deployed backend.
+`ApiService` treats URLs ending in `/api/auth` as the auth prefix and derives **`/api`** for profile and admin calls. Change these files (or replace with file replacements / CI variables) when deploying so the UI targets your deployed backend.
 
 ---
 
@@ -77,12 +77,20 @@ Change these files (or replace with file replacements / CI variables) when deplo
 | Path | Guard | Description |
 |------|-------|-------------|
 | `/` | — | Public landing page |
-| `/login` | Logged-out only | Wallet connect + signature login |
+| `/login` | Logged-out only | Email OTP → wallet connect + signature login |
 | `/wallet-setup` | Logged-out only | MetaMask installation guidance |
 | `/profile` | Authenticated | Profile and server verification |
-| `/admin` | Admin role | Admin dashboard (stats, history, access log) |
+| `/admin` | Admin role | Admin dashboard (stats, history, access log, IP events & blocklist) |
 
 Unauthenticated access to protected routes redirects to **`/login`**.
+
+---
+
+## Sign-in flow (summary)
+
+1. **Email** — user enters an address; the app calls `POST …/email/start` (OTP is delivered in dev via server logs, logger `EMAIL_OTP_DEV`).
+2. **OTP** — user enters the code; `POST …/email/verify` returns a short-lived **email ticket** stored only in memory for the rest of the flow.
+3. **Wallet** — connect MetaMask; the UI checks `GET …/email-status?address=…` for returning users, then calls `GET …/nonce?address&emailTicket` for first-time linking or `GET …/nonce?address` for a previously verified linked wallet, signs the server message, then `POST …/login` (ticket included only when needed). Blocked IPs surface as structured errors (e.g. `errorCode: IP_BLOCKED`).
 
 ---
 
@@ -128,7 +136,8 @@ Review Angular CLI output for `dist/decentralized-auth/`. Configure your host or
 
 | Issue | Suggestion |
 |-------|------------|
-| Login fails / network errors | Confirm backend is up and CORS allows `http://localhost:4200` (or your dev URL). |
+| Login fails / network errors | Confirm backend is up and CORS allows `http://localhost:4200` (or your dev URL). Check server logs for the OTP (`EMAIL_OTP_DEV`). |
+| `IP_BLOCKED` / 403 from API | Client IP hit automatic block rules; use an admin session to review **IP events** / **blocklist** and unblock if appropriate. |
 | MetaMask not detected | Install the extension or use **Wallet setup**; some browsers need permission prompts. |
 | Stale build errors | Run `npm run clean:cache` and rebuild. |
 | Wrong API host | Edit `src/environments/environment*.ts` `apiBaseUrl`. |

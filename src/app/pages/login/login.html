@@ -4,26 +4,94 @@
       <div class="icon-chip" aria-hidden="true">W</div>
       <p class="eyebrow">Secure Access</p>
     </div>
-    <h1>Sign in with your wallet</h1>
+    <h1>Sign in with email + MetaMask</h1>
     <p class="subtitle">
-      Use MetaMask to authenticate with a signed challenge. No password required.
+      Verify your email with a one-time code, then sign a wallet challenge. Your email can be used later for
+      notifications (e.g. ecommerce alerts).
     </p>
 
+    <ol class="steps-indicator" aria-label="Sign-in progress">
+      <li [class.active]="loginStep >= 1" [class.done]="loginStep > 1">1. Email</li>
+      <li [class.active]="loginStep >= 2" [class.done]="loginStep > 2">2. Code</li>
+      <li [class.active]="loginStep >= 3">3. Wallet</li>
+    </ol>
+
     <div class="feature-row" aria-hidden="true">
-      <span class="feature-pill">Signature-based login</span>
-      <span class="feature-pill">No password storage</span>
+      <span class="feature-pill">Email verified (OTP)</span>
+      <span class="feature-pill">Wallet signature</span>
     </div>
 
-    @if (!hasWalletProvider) {
-      <div class="wallet-warning">
-        <p class="warning-title">MetaMask is not detected on this browser.</p>
-        <p class="warning-copy">Open the guided setup page and complete wallet installation first.</p>
-        <a class="btn-secondary cta-link" routerLink="/wallet-setup">Open setup guide</a>
+    @if (loginStep === 1) {
+      <div class="step-panel">
+        <label class="field-label" for="email">Work or personal email</label>
+        <input
+          id="email"
+          class="text-input"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          autocomplete="email"
+          placeholder="you@example.com"
+          [disabled]="isSendingOtp"
+        />
+        <button class="btn-primary cta" type="button" (click)="sendEmailCode()" [disabled]="isSendingOtp || !email.trim()">
+          {{ isSendingOtp ? 'Sending…' : 'Send verification code' }}
+        </button>
+        <button class="btn-secondary ghost-btn" type="button" (click)="continueWithWalletOnly()" [disabled]="isSendingOtp">
+          Already verified before? Continue with wallet
+        </button>
+        <p class="hint">Development: check the Spring Boot console for <code>EMAIL_OTP_DEV</code> log lines.</p>
       </div>
-    } @else {
-      <button class="btn-primary cta" (click)="connectWallet()" [disabled]="isConnecting">
-        {{ isConnecting ? 'Connecting...' : 'Connect with MetaMask' }}
-      </button>
+    }
+
+    @if (loginStep === 2) {
+      <div class="step-panel">
+        <p class="muted">We sent a code to <strong>{{ email }}</strong></p>
+        <label class="field-label" for="otp">6-digit code</label>
+        <input
+          id="otp"
+          class="text-input"
+          type="text"
+          name="otp"
+          [(ngModel)]="otp"
+          inputmode="numeric"
+          maxlength="12"
+          autocomplete="one-time-code"
+          [disabled]="isVerifyingOtp"
+        />
+        <div class="row-actions">
+          <button class="btn-secondary" type="button" (click)="loginStep = 1" [disabled]="isVerifyingOtp">Back</button>
+          <button class="btn-primary" type="button" (click)="verifyEmailCode()" [disabled]="isVerifyingOtp || !otp.trim()">
+            {{ isVerifyingOtp ? 'Verifying…' : 'Verify code' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (loginStep === 3) {
+      @if (!hasWalletProvider) {
+        <div class="wallet-warning">
+          <p class="warning-title">MetaMask is not detected on this browser.</p>
+          <p class="warning-copy">Open the guided setup page and complete wallet installation first.</p>
+          <a class="btn-secondary cta-link" routerLink="/wallet-setup">Open setup guide</a>
+        </div>
+      } @else {
+        <p class="muted">
+          {{ emailTicket ? 'Email verified. Connect the wallet that should receive the session.' : 'Connect your previously verified wallet to sign in.' }}
+        </p>
+        <button class="btn-primary cta" type="button" (click)="connectWallet()" [disabled]="isConnecting">
+          {{ isConnecting ? 'Connecting…' : 'Connect with MetaMask' }}
+        </button>
+        @if (emailTicket) {
+          <button class="btn-secondary ghost-btn" type="button" (click)="loginStep = 2" [disabled]="isConnecting">
+            Back to code
+          </button>
+        } @else {
+          <button class="btn-secondary ghost-btn" type="button" (click)="loginStep = 1" [disabled]="isConnecting">
+            Back to email
+          </button>
+        }
+      }
     }
 
     <app-error-banner [message]="errorMessage" />

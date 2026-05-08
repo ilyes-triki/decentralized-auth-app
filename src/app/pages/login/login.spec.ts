@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { AuthService } from '../../services/auth';
 import { Web3Service } from '../../services/web3';
 import { ApiService } from '../../services/api';
+import { ToastService } from '../../services/toast.service';
 
 import { Login } from './login';
 
@@ -21,8 +22,11 @@ describe('Login', () => {
     signMessage: (address: string, message: string) => Promise<string>;
   };
   let apiMock: {
-    getNonce: (address: string) => Promise<string>;
-    login: (address: string, signature: string, message: string) => Promise<{ address: string; role: 'admin' | 'user'; token?: string }>;
+    startEmailOtp: ReturnType<typeof vi.fn>;
+    verifyEmailOtp: ReturnType<typeof vi.fn>;
+    getEmailStatus: ReturnType<typeof vi.fn>;
+    getNonce: ReturnType<typeof vi.fn>;
+    login: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -36,8 +40,16 @@ describe('Login', () => {
       signMessage: async () => '0xsig',
     };
     apiMock = {
-      getNonce: async () => 'nonce',
-      login: async () => ({ address: '0xabc', role: 'user', token: 'jwt' }),
+      startEmailOtp: vi.fn().mockResolvedValue({ message: 'ok' }),
+      verifyEmailOtp: vi.fn().mockResolvedValue({ emailTicket: 'ticket123', expiresInSeconds: 900 }),
+      getEmailStatus: vi.fn().mockResolvedValue({
+        verified: true,
+        linked: true,
+        accountBlocked: false,
+        email: 'x@example.com',
+      }),
+      getNonce: vi.fn().mockResolvedValue('nonce'),
+      login: vi.fn().mockResolvedValue({ address: '0xabc', role: 'user', token: 'jwt' }),
     };
 
     await TestBed.configureTestingModule({
@@ -47,6 +59,7 @@ describe('Login', () => {
         { provide: AuthService, useValue: authMock },
         { provide: Web3Service, useValue: web3Mock },
         { provide: ApiService, useValue: apiMock },
+        ToastService,
       ],
     }).compileComponents();
 
@@ -67,6 +80,8 @@ describe('Login', () => {
     web3Mock.connectWalletOnly = async () => {
       throw new Error('Ethereum provider not found');
     };
+    component.loginStep = 3;
+    component.emailTicket = 't';
 
     await component.connectWallet();
 
@@ -79,6 +94,8 @@ describe('Login', () => {
     web3Mock.connectWalletOnly = async () => {
       throw { code: 4001 };
     };
+    component.loginStep = 3;
+    component.emailTicket = 't';
 
     await component.connectWallet();
 
@@ -92,22 +109,40 @@ describe('Login', () => {
       loginCalledWith = { address, role, token };
     };
 
+    component.loginStep = 3;
+    component.emailTicket = 'ticket';
+
     await component.connectWallet();
 
     expect(component.errorMessage).toBe('');
     expect(component.isConnecting).toBe(false);
     expect(loginCalledWith).toEqual({ address: '0xabc', role: 'user', token: 'jwt' });
     expect(router.navigate).toHaveBeenCalledWith(['/profile']);
+    expect(apiMock.getNonce).toHaveBeenCalledWith('0xabc', 'ticket');
+    expect(apiMock.login).toHaveBeenCalledWith('0xabc', '0xsig', 'nonce', 'ticket');
   });
 
   it('should navigate to wallet setup when provider is missing', async () => {
     web3Mock.hasEthereumProvider = () => false;
     vi.mocked(router.navigate).mockClear();
+    component.loginStep = 3;
 
     await component.connectWallet();
 
     expect(component.hasWalletProvider).toBe(false);
     expect(component.isConnecting).toBe(false);
     expect(router.navigate).toHaveBeenCalledWith(['/wallet-setup']);
+  });
+
+  it('should require OTP for wallet not previously verified', async () => {
+    apiMock.getEmailStatus.mockResolvedValue({ verified: false, linked: false, accountBlocked: false, email: null });
+    component.loginStep = 3;
+    component.emailTicket = '';
+
+    await component.connectWallet();
+
+    expect(component.errorMessage).toContain('not linked to a verified email');
+    expect(component.loginStep).toBe(1);
+    expect(apiMock.getNonce).not.toHaveBeenCalled();
   });
 });

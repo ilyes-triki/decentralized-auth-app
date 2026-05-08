@@ -1,0 +1,53 @@
+<section class="blocked-page">
+  <div class="blocked-card">
+    <p class="eyebrow">Security notice</p>
+    <h1>Account blocked</h1>
+    <p class="subtitle">
+      Access to the platform is restricted for this wallet. If you think this is a mistake, submit a detailed appeal for admin review.
+    </p>
+
+    <div class="meta">
+      <div><strong>Wallet</strong>: <code>{{ walletAddress || 'Not provided' }}</code></div>
+      <div><strong>Email</strong>: {{ email || 'Optional' }}</div>
+    </div>
+
+    <label class="field-label" for="wallet">Wallet address</label>
+    <input id="wallet" class="text-input" type="text" [(ngModel)]="walletAddress" placeholder="0x..." />
+
+    <label class="field-label" for="email">Email (optional)</label>
+    <input id="email" class="text-input" type="email" [(ngModel)]="email" placeholder="you@example.com" />
+
+    <label class="field-label" for="justification">Full justification (min 10 chars)</label>
+    <textarea
+      id="justification"
+      class="text-input text-area"
+      rows="6"
+      [(ngModel)]="justification"
+      placeholder="Explain why this block should be lifted..."
+    ></textarea>
+
+    <label class="field-label" for="evidenceUrl">Evidence URL (optional, e.g. Google Drive)</label>
+    <input id="evidenceUrl" class="text-input" type="url" [(ngModel)]="evidenceUrl" placeholder="https://..." />
+
+    <button
+      class="btn-primary cta"
+      type="button"
+      (click)="submitAppeal()"
+      [disabled]="isSubmitting || hasOpenAppeal || !walletAddress.trim() || justification.trim().length < 10"
+    >
+      {{ isSubmitting ? 'Submitting…' : 'Submit appeal' }}
+    </button>
+
+    @if (successMessage) {
+      <p class="success-banner" role="status">{{ successMessage }}</p>
+    }
+
+    @if (hasOpenAppeal) {
+      <p class="subtitle">You cannot submit another appeal until admin resolves the current one.</p>
+    }
+
+    <app-error-banner [message]="errorMessage" />
+
+    <p class="footer-link"><a routerLink="/login">Back to sign in</a></p>
+  </div>
+</section>

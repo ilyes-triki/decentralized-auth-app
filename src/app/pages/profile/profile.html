@@ -15,6 +15,20 @@
       <span class="value">{{ user?.role }}</span>
     </div>
 
+    @if (serverEmail) {
+      <div class="data-row">
+        <span class="label">Email (server)</span>
+        <span class="value">{{ serverEmail }}</span>
+      </div>
+    }
+
+    @if (serverEmailVerified !== null) {
+      <div class="data-row">
+        <span class="label">Email verified</span>
+        <span class="value">{{ serverEmailVerified ? 'Yes' : 'No' }}</span>
+      </div>
+    }
+
     <div class="data-row">
       <span class="label">Server verified</span>
       @if (isVerifying) {

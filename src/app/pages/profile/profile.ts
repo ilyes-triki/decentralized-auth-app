@@ -20,6 +20,8 @@ export class Profile implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   isVerifying = false;
   serverAddress = '';
+  serverEmail = '';
+  serverEmailVerified: boolean | null = null;
   verifyError = '';
 
   constructor(
@@ -61,6 +63,8 @@ export class Profile implements OnInit {
       const me = await this.api.getMe();
       this.patchUi(() => {
         this.serverAddress = me.address;
+        this.serverEmail = me.email ?? '';
+        this.serverEmailVerified = typeof me.emailVerified === 'boolean' ? me.emailVerified : null;
       });
       this.toast.success('Profile verified with the server.');
     } catch (error) {
